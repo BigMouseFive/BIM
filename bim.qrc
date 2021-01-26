@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="demo">images/demo.png</file>
+        <file alias="manager">images/manager.png</file>
+        <file alias="search">images/search.png</file>
+        <file>images/add.png</file>
+        <file>images/del.png</file>
+        <file>images/save.png</file>
+        <file>images/close.png</file>
+        <file>images/show.png</file>
+        <file>images/struct.png</file>
+    </qresource>
+    <qresource prefix="/static">
+        <file>static/chinese.json</file>
+        <file>static/AMOLED.qss</file>
+        <file>static/Aqua.qss</file>
+        <file>static/ConsoleStyle.qss</file>
+        <file>static/ElegantDark.qss</file>
+        <file>static/MacOS.qss</file>
+        <file>static/ManjaroMix.qss</file>
+        <file>static/MaterialDark.qss</file>
+        <file>static/NeonButtons.qss</file>
+        <file>static/Ubuntu.qss</file>
+    </qresource>
+</RCC>
