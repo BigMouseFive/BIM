@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,12 +27,14 @@ SOURCES += \
         main.cpp \
         MainWindow.cpp \
         CaseSearch.cpp \
-    DemoManager.cpp
+    DemoManager.cpp \
+    DataManager.cpp
 
 HEADERS += \
         MainWindow.h \
     CaseSearch.h \
-    DemoManager.h
+    DemoManager.h \
+    DataManager.h
 
 FORMS += \
         MainWindow.ui \

@@ -7,6 +7,7 @@ namespace Ui {
 class CaseSearch;
 }
 class QStandardItemModel;
+class QLineEdit;
 class CaseSearch : public QWidget
 {
     Q_OBJECT
@@ -36,6 +37,9 @@ private:
     QJsonArray chinese_data;
     bool show_flag = true;
     Ui::CaseSearch *ui;
+
+    std::vector<QLineEdit*> m_struct_list;
+    std::vector<QLineEdit*> m_key_list;
 };
 
 #endif // CASESEARCH_H
