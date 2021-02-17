@@ -8,6 +8,7 @@ class CaseSearch;
 }
 class QStandardItemModel;
 class QLineEdit;
+class QDoubleSpinBox;
 class CaseSearch : public QWidget
 {
     Q_OBJECT
@@ -40,6 +41,7 @@ private:
 
     std::vector<QLineEdit*> m_struct_list;
     std::vector<QLineEdit*> m_key_list;
+    std::vector<QDoubleSpinBox*> m_key_weight_list;
 };
 
 #endif // CASESEARCH_H

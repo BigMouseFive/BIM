@@ -8,11 +8,11 @@
 #include <DataManager.h>
 #include <QString>
 
-std::map<QString, int> height_map;
+extern std::map<QString, int> height_map;
 CaseSearch::CaseSearch(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::CaseSearch),
-    m_model(nullptr)
+    m_model(nullptr),
+    ui(new Ui::CaseSearch)
 {
     ui->setupUi(this);
     initChineseData();
@@ -39,7 +39,7 @@ void CaseSearch::initChineseData(){
     auto json_doc = QJsonDocument::fromJson(allData, &json_error);
     chinese_data = json_doc.array();
 
-    for (auto& item: chinese_data){
+    for (auto item: chinese_data){
         ui->cb_province->addItem(item.toObject()["name"].toString());
     }
 }
@@ -82,7 +82,7 @@ double height_sim_map[4][4] = {1, 1/9.0, 0, 0,
 // 计算二进制中1的个数
 int BitCount2(unsigned int n)
 {
-    unsigned int c =0 ;
+    int c =0 ;
     for (c =0; n; ++c)
     {
         n &= (n -1) ; // 清除最低位的1
@@ -91,6 +91,8 @@ int BitCount2(unsigned int n)
 }
 void CaseSearch::on_btn_search_clicked()
 {
+    std::map<int, double> sim_map;
+    std::list<int> bim_sort;
     m_model->clear();
     initTableViewHeader();
     auto bim_info_map = DataManager::GetInstance()->GetBims();
@@ -109,7 +111,7 @@ void CaseSearch::on_btn_search_clicked()
         double count = 0;
         for (auto iter = m_struct_list.begin(); iter != m_struct_list.end(); ++iter){
             for (auto it = struct_list.begin(); it != struct_list.end(); ++it){
-                if (*it == iter->text()){
+                if (*it == (*iter)->text()){
                     count++;
                     break;
                 }
@@ -211,6 +213,48 @@ void CaseSearch::on_btn_search_clicked()
             nature_type = count / nature_list.size();
 
         // 关键词 key
+        QStringList key_list = bim_info.key.split(":");
+        QStringList key_weight_list = bim_info.key_weight.split(":");
+
+        double sim_key = 0;
+        auto iter1 = m_key_weight_list.begin();
+        for (auto iter = m_key_list.begin(); iter != m_key_list.end(); ++iter, ++iter1){
+            auto it1 = key_weight_list.begin();
+            for (auto it = key_list.begin(); it != struct_list.end(); ++it, ++it1){
+                if (*it == (*iter)->text()){
+                    sim_key += (*iter1)->value() * it1->toDouble();
+                }
+            }
+        }
+
+        double m_key_count = 0;
+        for (auto iter = m_key_weight_list.begin(); iter != m_key_weight_list.end(); ++iter)
+            m_key_count += (*iter)->value() * (*iter)->value();
+
+        double key_count = 0;
+        for (auto iter = key_weight_list.begin(); iter != key_weight_list.end(); ++iter)
+            key_count += iter->toDouble() * iter->toDouble();
+
+        sim_key = sim_key / sqrt(m_key_count) * sqrt(key_count);
+
+        double sim = sim_square * ui->spin_weight_square->value() +
+                sim_height * ui->spin_weight_height->value() +
+                sim_struct * ui->spin_weight_struct->value() +
+                sim_bim * ui->spin_weight_use->value() +
+                sim_type * ui->spin_weight_type->value() +
+                sim_point * ui->spin_weight_pos->value() +
+                sim_key * ui->spin_weight_key->value();
+        sim_map[bim_info.id] = sim;
+        auto sort_iter = bim_sort.begin();
+        for (; sort_iter != bim_sort.end(); ++sort_iter){
+            if (sim < sim_map[*sort_iter]) break;
+        }
+        bim_sort.insert(sort_iter, bim_info.id);
+    }
+
+    m_model->clear();
+    for (auto iter = bim_sort.begin(); iter != bim_sort.end(); ++iter){
+        auto item = new QStandardItem();
 
     }
 }
@@ -218,9 +262,9 @@ void CaseSearch::on_btn_search_clicked()
 void CaseSearch::on_cb_province_currentIndexChanged(const QString &arg1)
 {
     ui->cb_city->clear();
-    for (auto& item: chinese_data){
+    for (auto item: chinese_data){
         if (arg1 == item.toObject()["name"].toString()){
-            for (auto& item1: item.toObject()["city"].toArray()){
+            for (auto item1: item.toObject()["city"].toArray()){
                 ui->cb_city->addItem(item1.toObject()["name"].toString());
             }
             return;
@@ -232,11 +276,11 @@ void CaseSearch::on_cb_city_currentIndexChanged(const QString &arg1)
 {
     ui->cb_area->clear();
     auto provience_name = ui->cb_province->currentText();
-    for (auto& item: chinese_data){
+    for (auto item: chinese_data){
         if (provience_name == item.toObject()["name"].toString()){
-            for (auto& item1: item.toObject()["city"].toArray()){
+            for (auto item1: item.toObject()["city"].toArray()){
                 if (arg1 == item1.toObject()["name"].toString()){
-                    for (auto& item2: item1.toObject()["area"].toArray()){
+                    for (auto item2: item1.toObject()["area"].toArray()){
                         ui->cb_area->addItem(item2.toString());
                     }
                     return;
@@ -287,12 +331,19 @@ void CaseSearch::on_btn_add_key_clicked()
     widget->setLayout(hbox);
     ui->vbox_key->addWidget(widget);
     m_key_list.emplace_back(line_edit);
+    m_key_weight_list.emplace_back(spin_box);
     connect(btn_del, &QPushButton::clicked, [=](){
         ui->vbox_key->removeWidget(widget);
         widget->deleteLater();
         for (auto iter = m_key_list.begin(); iter != m_key_list.end(); ++iter){
             if (*iter == line_edit){
                 m_key_list.erase(iter);
+                break;
+            }
+        }
+        for (auto iter = m_key_weight_list.begin(); iter != m_key_weight_list.end(); ++iter){
+            if (*iter == spin_box){
+                m_key_weight_list.erase(iter);
                 break;
             }
         }
