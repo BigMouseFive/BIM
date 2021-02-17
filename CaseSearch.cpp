@@ -8,7 +8,7 @@
 #include <DataManager.h>
 #include <QString>
 
-extern std::map<QString, int> height_map;
+std::map<QString, int> height_map;
 CaseSearch::CaseSearch(QWidget *parent) :
     QWidget(parent),
     m_model(nullptr),
