@@ -19,10 +19,14 @@ CaseSearch::CaseSearch(QWidget *parent) :
     initTableViewHeader();
     ui->tableView->setModel(m_model);
 
-    height_map["低层"] = 0;
-    height_map["多层"] = 1;
-    height_map["高层"] = 2;
-    height_map["超高层"] = 3;
+    height_map[QString::fromLocal8Bit("低层")] = 0;
+    height_map[QString::fromLocal8Bit("多层")] = 1;
+    height_map[QString::fromLocal8Bit("高层")] = 2;
+    height_map[QString::fromLocal8Bit("超高层")] = 3;
+    height_map[QString::fromLocal8Bit("")] = 4;
+    m_struct_list.emplace_back(ui->line_struct);
+    m_key_list.emplace_back(ui->line_key);
+    m_key_weight_list.emplace_back(ui->spin_weight_key);
 }
 
 CaseSearch::~CaseSearch()
@@ -46,9 +50,7 @@ void CaseSearch::initChineseData(){
 
 void CaseSearch::initTableViewHeader(){
     QStringList strHeader;
-    strHeader << QString::fromLocal8Bit("案例编号")
-              << QString::fromLocal8Bit("案例名称")
-              << QString::fromLocal8Bit("相似度")
+    strHeader << QString::fromLocal8Bit("案例名称")
               << QString::fromLocal8Bit("应用方案");
 
     if(nullptr == m_model)
@@ -74,10 +76,10 @@ void CaseSearch::on_btn_show_close_param_clicked()
     }
 }
 
-double height_sim_map[4][4] = {1, 1/9.0, 0, 0,
-                               1/9.0, 1, 1/7.0, 0,
-                               0, 1/7.0, 1, 1/9.0,
-                               0, 0, 1/9.0, 1};
+double height_sim_map[4][5] = {1, 1/9.0, 0, 0, 0,
+                               1/9.0, 1, 1/7.0, 0, 0,
+                               0, 1/7.0, 1, 1/9.0, 0,
+                               0, 0, 1/9.0, 1, 0};
 
 // 计算二进制中1的个数
 int BitCount2(unsigned int n)
@@ -93,12 +95,13 @@ void CaseSearch::on_btn_search_clicked()
 {
     std::map<int, double> sim_map;
     std::list<int> bim_sort;
-    m_model->clear();
-    initTableViewHeader();
     auto bim_info_map = DataManager::GetInstance()->GetBims();
     double max_square = DataManager::GetInstance()->getMaxSquare();
     double min_square = DataManager::GetInstance()->getMinSquare();
-    for (auto iter = bim_info_map.begin(); iter != bim_info_map.end(); ++iter){
+    ui->pro_search->setValue(0);
+    float i = 0;
+    for (auto iter = bim_info_map.begin(); iter != bim_info_map.end(); ++iter, ++i){
+        ui->pro_search->setValue(i / bim_info_map.size() * 100);
         BimInfo& bim_info = iter->second;
         // 建筑面积 square
         double sim_square = 1 - abs(ui->spin_square_size->value() - bim_info.square) / (max_square - min_square);
@@ -107,7 +110,7 @@ void CaseSearch::on_btn_search_clicked()
         double sim_height = height_sim_map[ui->cb_height->currentIndex()][height_map[bim_info.height]];
 
         // 建筑结构 strcut
-        QStringList struct_list = bim_info.build_struct.split(",");
+        QStringList struct_list = bim_info.build_struct.split(QString::fromLocal8Bit("、"));
         double count = 0;
         for (auto iter = m_struct_list.begin(); iter != m_struct_list.end(); ++iter){
             for (auto it = struct_list.begin(); it != struct_list.end(); ++it){
@@ -128,14 +131,14 @@ void CaseSearch::on_btn_search_clicked()
         double sim_point = 1 ? ui->cb_province->currentText() + ui->cb_city->currentText() + ui->cb_area->currentText() == point_text : 8;
 
         // BIM 应用阶段 bim
-        QStringList bim_list = bim_info.bim.split(":");
+        QStringList bim_list = bim_info.bim.split(QString::fromLocal8Bit("、"));
         QStringList m_bim_list;
-        if (ui->ck_design->checkState() == Qt::Checked) bim_list.append("设计");
-        if (ui->ck_devops->checkState() == Qt::Checked) bim_list.append("运维");
-        if (ui->ck_dismantle->checkState() == Qt::Checked) bim_list.append("拆除");
-        if (ui->ck_reform->checkState() == Qt::Checked) bim_list.append("改造");
-        if (ui->ck_survey->checkState() == Qt::Checked) bim_list.append("勘察");
-        if (ui->ck_work->checkState() == Qt::Checked) bim_list.append("施工");
+        if (ui->ck_design->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("设计"));
+        if (ui->ck_devops->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("运维"));
+        if (ui->ck_dismantle->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("拆除"));
+        if (ui->ck_reform->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("改造"));
+        if (ui->ck_survey->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("勘察"));
+        if (ui->ck_work->checkState() == Qt::Checked) bim_list.append(QString::fromLocal8Bit("施工"));
         count = 0;
         for (auto iter = m_bim_list.begin(); iter != m_bim_list.end(); ++iter){
             for (auto it = bim_list.begin(); it != bim_list.end(); ++it){
@@ -152,28 +155,28 @@ void CaseSearch::on_btn_search_clicked()
             sim_bim = count / bim_list.size();
 
         // 项目类型 type
-        QStringList type_list = bim_info.type.split(":");
+        QStringList type_list = bim_info.type.split(QString::fromLocal8Bit("、"));
         QStringList m_type_list;
-        if (ui->ck_office->checkState() == Qt::Checked) m_type_list.append("办公");
-        if (ui->ck_science->checkState() == Qt::Checked) m_type_list.append("科研");
-        if (ui->ck_education->checkState() == Qt::Checked) m_type_list.append("教育");
-        if (ui->ck_dorm->checkState() == Qt::Checked) m_type_list.append("宿舍");
-        if (ui->ck_entertainment->checkState() == Qt::Checked) m_type_list.append("文娱");
-        if (ui->ck_traffic->checkState() == Qt::Checked) m_type_list.append("交通");
-        if (ui->ck_communication->checkState() == Qt::Checked) m_type_list.append("通信");
-        if (ui->ck_medical->checkState() == Qt::Checked) m_type_list.append("医疗");
-        if (ui->ck_finance->checkState() == Qt::Checked) m_type_list.append("金融");
-        if (ui->ck_gardens->checkState() == Qt::Checked) m_type_list.append("园林");
-        if (ui->ck_agriculture->checkState() == Qt::Checked) m_type_list.append("农业");
-        if (ui->ck_civil->checkState() == Qt::Checked) m_type_list.append("民政");
-        if (ui->ck_sport->checkState() == Qt::Checked) m_type_list.append("体育");
-        if (ui->ck_justice->checkState() == Qt::Checked) m_type_list.append("司法");
-        if (ui->ck_religion->checkState() == Qt::Checked) m_type_list.append("宗教");
-        if (ui->ck_transfer->checkState() == Qt::Checked) m_type_list.append("物流");
-        if (ui->ck_industry->checkState() == Qt::Checked) m_type_list.append("工业");
-        if (ui->ck_anniversary->checkState() == Qt::Checked) m_type_list.append("纪念");
-        if (ui->ck_home->checkState() == Qt::Checked) m_type_list.append("住宅");
-        if (ui->ck_business->checkState() == Qt::Checked) m_type_list.append("商业");
+        if (ui->ck_office->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("办公"));
+        if (ui->ck_science->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("科研"));
+        if (ui->ck_education->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("教育"));
+        if (ui->ck_dorm->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("宿舍"));
+        if (ui->ck_entertainment->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("文娱"));
+        if (ui->ck_traffic->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("交通"));
+        if (ui->ck_communication->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("通信"));
+        if (ui->ck_medical->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("医疗"));
+        if (ui->ck_finance->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("金融"));
+        if (ui->ck_gardens->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("园林"));
+        if (ui->ck_agriculture->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("农业"));
+        if (ui->ck_civil->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("民政"));
+        if (ui->ck_sport->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("体育"));
+        if (ui->ck_justice->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("司法"));
+        if (ui->ck_religion->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("宗教"));
+        if (ui->ck_transfer->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("物流"));
+        if (ui->ck_industry->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("工业"));
+        if (ui->ck_anniversary->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("纪念"));
+        if (ui->ck_home->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("住宅"));
+        if (ui->ck_business->checkState() == Qt::Checked) m_type_list.append(QString::fromLocal8Bit("商业"));
         count = 0;
         for (auto iter = m_type_list.begin(); iter != m_type_list.end(); ++iter){
             for (auto it = type_list.begin(); it != type_list.end(); ++it){
@@ -190,13 +193,13 @@ void CaseSearch::on_btn_search_clicked()
             sim_type = count / type_list.size();
 
         // 建设性质 nature
-        QStringList nature_list = bim_info.nature.split(":");
+        QStringList nature_list = bim_info.nature.split(QString::fromLocal8Bit("、"));
         QStringList m_nature_list;
-        if (ui->ck_resume->checkState() == Qt::Checked) m_nature_list.append("恢复");
-        if (ui->ck_move->checkState() == Qt::Checked) m_nature_list.append("迁建");
-        if (ui->ck_new->checkState() == Qt::Checked) m_nature_list.append("新建");
-        if (ui->ck_expand->checkState() == Qt::Checked) m_nature_list.append("扩建");
-        if (ui->ck_update->checkState() == Qt::Checked) m_nature_list.append("改建");
+        if (ui->ck_resume->checkState() == Qt::Checked) m_nature_list.append(QString::fromLocal8Bit("恢复"));
+        if (ui->ck_move->checkState() == Qt::Checked) m_nature_list.append(QString::fromLocal8Bit("迁建"));
+        if (ui->ck_new->checkState() == Qt::Checked) m_nature_list.append(QString::fromLocal8Bit("新建"));
+        if (ui->ck_expand->checkState() == Qt::Checked) m_nature_list.append(QString::fromLocal8Bit("扩建"));
+        if (ui->ck_update->checkState() == Qt::Checked) m_nature_list.append(QString::fromLocal8Bit("改建"));
         count = 0;
         for (auto iter = m_nature_list.begin(); iter != m_nature_list.end(); ++iter){
             for (auto it = nature_list.begin(); it != nature_list.end(); ++it){
@@ -213,14 +216,14 @@ void CaseSearch::on_btn_search_clicked()
             nature_type = count / nature_list.size();
 
         // 关键词 key
-        QStringList key_list = bim_info.key.split(":");
-        QStringList key_weight_list = bim_info.key_weight.split(":");
+        QStringList key_list = bim_info.key.split(QString::fromLocal8Bit("、"));
+        QStringList key_weight_list = bim_info.key_weight.split(QString::fromLocal8Bit("、"));
 
         double sim_key = 0;
         auto iter1 = m_key_weight_list.begin();
         for (auto iter = m_key_list.begin(); iter != m_key_list.end(); ++iter, ++iter1){
             auto it1 = key_weight_list.begin();
-            for (auto it = key_list.begin(); it != struct_list.end(); ++it, ++it1){
+            for (auto it = key_list.begin(); it != key_list.end(); ++it, ++it1){
                 if (*it == (*iter)->text()){
                     sim_key += (*iter1)->value() * it1->toDouble();
                 }
@@ -245,18 +248,30 @@ void CaseSearch::on_btn_search_clicked()
                 sim_point * ui->spin_weight_pos->value() +
                 sim_key * ui->spin_weight_key->value();
         sim_map[bim_info.id] = sim;
-        auto sort_iter = bim_sort.begin();
-        for (; sort_iter != bim_sort.end(); ++sort_iter){
-            if (sim < sim_map[*sort_iter]) break;
+        if (sim > ui->spin_similarity->value()){
+            auto sort_iter = bim_sort.begin();
+            for (; sort_iter != bim_sort.end(); ++sort_iter){
+                if (sim > sim_map[*sort_iter]) break;
+            }
+            bim_sort.insert(sort_iter, bim_info.id);
         }
-        bim_sort.insert(sort_iter, bim_info.id);
+
+//        qDebug() << bim_info.id << ": " << sim;
+//        qDebug() << bim_info.id << ": " << sim_square << ", " <<
+//                    sim_height << ", " << sim_struct << ", " <<
+//                    sim_bim << ", " << sim_type << ", " << sim_point << ", " << sim_key ;
     }
 
     m_model->clear();
+    initTableViewHeader();
     for (auto iter = bim_sort.begin(); iter != bim_sort.end(); ++iter){
-        auto item = new QStandardItem();
-
+        BimInfo& data = bim_info_map[*iter];
+        QList<QStandardItem* > item_list;
+        item_list.append(new QStandardItem(data.name));
+        item_list.append(new QStandardItem(data.url));
+        m_model->appendRow(item_list);
     }
+    ui->pro_search->setValue(100);
 }
 
 void CaseSearch::on_cb_province_currentIndexChanged(const QString &arg1)
@@ -320,8 +335,8 @@ void CaseSearch::on_btn_add_key_clicked()
     auto widget = new QWidget(this);
     auto line_edit = new QLineEdit();
     auto spin_box = new QDoubleSpinBox();
-    spin_box->setPrefix(QString::fromUtf8("权重"));
-    auto btn_del = new QPushButton(QIcon(":/images/images/del.png"), QString::fromUtf8("删除"));
+    spin_box->setPrefix(QString::fromLocal8Bit("权重"));
+    auto btn_del = new QPushButton(QIcon(":/images/images/del.png"), QString::fromLocal8Bit("删除"));
     auto hbox = new QHBoxLayout();
     hbox->addWidget(line_edit);
     hbox->addWidget(spin_box);

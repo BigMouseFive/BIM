@@ -4,6 +4,9 @@
 
 #define CREATE_BIM "CREATE TABLE bim_info (\
                         id  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\
+                        num  INTEGER,\
+                        name  TEXT,\
+                        time  TEXT,\
                         url  TEXT,\
                         square  REAL,\
                         position  TEXT,\
@@ -77,7 +80,10 @@ int DataManager::InitDataBase(){
 int DataManager::AddBim(BimInfo& bim_info){
     if (ConnectDataBase() != SQL_OK) return SQL_OPEN_ERROR;
     QSqlQuery sql_query(dataBase);
-    sql_query.prepare("insert into bim_info(url,square,position,struct,bim,type,height,nature,key,key_weight) values(?,?,?,?,?,?,?,?,?,?)");
+    sql_query.prepare("insert into bim_info(num,name,time,url,square,position,struct,bim,type,height,nature,key,key_weight) values(?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    sql_query.addBindValue(bim_info.num);
+    sql_query.addBindValue(bim_info.name);
+    sql_query.addBindValue(bim_info.time);
     sql_query.addBindValue(bim_info.url);
     sql_query.addBindValue(bim_info.square);
     sql_query.addBindValue(bim_info.position);
@@ -91,6 +97,7 @@ int DataManager::AddBim(BimInfo& bim_info){
     if (!sql_query.exec()) {
         auto a = sql_query.lastError().text();
         dataBase.close();
+        qDebug() << a;
         return SQL_EXEC_ERROR;
     }
 
@@ -129,10 +136,20 @@ int DataManager::DelBim(int id){
 
     return SQL_OK;
 }
+
+int DataManager::DelBimByNum(int num){
+    for (auto iter = m_bim_info_map.begin(); iter != m_bim_info_map.end(); ++iter){
+        if (iter->second.num == num){
+            return DelBim(iter->first);
+        }
+    }
+    return SQL_OK;
+}
+
 int DataManager::GetBimsPrivate(){
     if (ConnectDataBase() != SQL_OK) return SQL_OPEN_ERROR;
     QSqlQuery sql_query(dataBase);
-    QString str = "select id,url,square,position,struct,bim,type,height,nature,key,key_weight from bim_info";
+    QString str = "select id,num,name,time,url,square,position,struct,bim,type,height,nature,key,key_weight from bim_info";
     sql_query.prepare(str);
     if (!sql_query.exec()) {
         auto a = sql_query.lastError().text();
@@ -141,16 +158,19 @@ int DataManager::GetBimsPrivate(){
     while (sql_query.next()){
         BimInfo info;
         info.id = sql_query.value(0).toInt();
-        info.url = sql_query.value(1).toString();
-        info.square = sql_query.value(2).toReal();
-        info.position = sql_query.value(3).toString();
-        info.build_struct = sql_query.value(4).toString();
-        info.bim = sql_query.value(5).toString();
-        info.type = sql_query.value(6).toString();
-        info.height = sql_query.value(7).toString();
-        info.nature = sql_query.value(8).toString();
-        info.key = sql_query.value(9).toString();
-        info.key_weight = sql_query.value(10).toString();
+        info.num = sql_query.value(1).toInt();
+        info.name = sql_query.value(2).toString();
+        info.time = sql_query.value(3).toString();
+        info.url = sql_query.value(4).toString();
+        info.square = sql_query.value(5).toReal();
+        info.position = sql_query.value(6).toString();
+        info.build_struct = sql_query.value(7).toString();
+        info.bim = sql_query.value(8).toString();
+        info.type = sql_query.value(9).toString();
+        info.height = sql_query.value(10).toString();
+        info.nature = sql_query.value(11).toString();
+        info.key = sql_query.value(12).toString();
+        info.key_weight = sql_query.value(13).toString();
         if (min_square > info.square) min_square = info.square;
         if (max_square < info.square) max_square = info.square;
         m_bim_info_map[info.id] = info;

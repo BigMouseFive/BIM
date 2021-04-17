@@ -18,6 +18,9 @@
 
 typedef struct{
    int id;
+   int num;
+   QString name;
+   QString time;
    QString url;
    double square;
    QString position;
@@ -42,6 +45,7 @@ public:
     //table bim
     int AddBim(BimInfo&);
     int DelBim(int id);
+    int DelBimByNum(int num);
     std::map<int, BimInfo> GetBims(){
         if (m_bim_info_map.empty())
             GetBimsPrivate();

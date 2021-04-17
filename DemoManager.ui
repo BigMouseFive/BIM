@@ -53,17 +53,6 @@
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_3">
-         <property name="text">
-          <string>保存</string>
-         </property>
-         <property name="icon">
-          <iconset resource="bim.qrc">
-           <normaloff>:/images/images/save.png</normaloff>:/images/images/save.png</iconset>
-         </property>
-        </widget>
-       </item>
       </layout>
      </item>
      <item>

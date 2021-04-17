@@ -28,18 +28,21 @@ SOURCES += \
         MainWindow.cpp \
         CaseSearch.cpp \
     DemoManager.cpp \
-    DataManager.cpp
+    DataManager.cpp \
+    AddItemDialog.cpp
 
 HEADERS += \
         MainWindow.h \
     CaseSearch.h \
     DemoManager.h \
-    DataManager.h
+    DataManager.h \
+    AddItemDialog.h
 
 FORMS += \
         MainWindow.ui \
     CaseSearch.ui \
-    DemoManager.ui
+    DemoManager.ui \
+    AddItemDialog.ui
 
 RESOURCES += \
     bim.qrc

@@ -550,7 +550,7 @@
               <item>
                <widget class="QDoubleSpinBox" name="spin_similarity">
                 <property name="suffix">
-                 <string>%</string>
+                 <string/>
                 </property>
                </widget>
               </item>
